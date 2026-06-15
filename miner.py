@@ -47,7 +47,6 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
     "Accept": "application/json",
-    "Content-Type": "application/x-www-form-urlencoded",
     "Origin": "https://app.gramnetwork.online",
     "Referer": "https://app.gramnetwork.online/",
 }
@@ -148,9 +147,10 @@ def api_call(method, endpoint, init_data):
     url = f"{BASE_URL}/{endpoint}"
     try:
         if method == "GET":
-            r = requests.get(f"{url}?initData={quote(init_data, safe='')}", headers=HEADERS, timeout=30)
+            r = requests.get(url, params={"initData": init_data}, headers=HEADERS, timeout=30)
         else:
-            r = requests.post(url, headers=HEADERS, data=f"initData={quote(init_data, safe='')}", timeout=30)
+            post_headers = {**HEADERS, "Content-Type": "application/x-www-form-urlencoded"}
+            r = requests.post(url, headers=post_headers, data=f"initData={quote(init_data, safe='')}", timeout=30)
         r.raise_for_status()
         return r.json()
     except requests.exceptions.HTTPError:
