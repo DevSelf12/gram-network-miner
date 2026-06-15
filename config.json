@@ -3,6 +3,6 @@
   "api_hash": "YOUR_API_HASH",
   "phone": "+62xxxxxxxxxx",
   "password": "",
-  "bot_username": "gramnetwork_bot",
+  "bot_username": "gram_network_bot",
   "notes": "password = Telegram 2FA cloud password (kosongkan jika tidak pakai 2FA)"
 }
