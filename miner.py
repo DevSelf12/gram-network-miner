@@ -14,10 +14,14 @@ Setup:
 
 import requests
 try:
-    import cloudscraper
-    scraper = cloudscraper.create_scraper()
+    from curl_cffi import requests as curl_requests
+    scraper = curl_requests
 except ImportError:
-    scraper = None
+    try:
+        import cloudscraper
+        scraper = cloudscraper.create_scraper()
+    except ImportError:
+        scraper = None
 import json
 import time
 import sys
@@ -150,13 +154,26 @@ async def get_fresh_initdata(client, bot_username="gram_network_bot"):
 def api_call(method, endpoint, init_data):
     """Make API call to Gram Network."""
     url = f"{BASE_URL}/{endpoint}"
-    http = scraper or requests  # use cloudscraper if available
     try:
         if method == "GET":
-            r = http.get(url, params={"initData": init_data}, headers=HEADERS, timeout=30)
+            if scraper and hasattr(scraper, 'get'):
+                # curl_cffi with browser impersonation
+                r = scraper.get(url, params={"initData": init_data}, 
+                               headers=HEADERS, timeout=30,
+                               impersonate="chrome")
+            else:
+                r = requests.get(url, params={"initData": init_data}, 
+                                headers=HEADERS, timeout=30)
         else:
             post_headers = {**HEADERS, "Content-Type": "application/x-www-form-urlencoded"}
-            r = http.post(url, headers=post_headers, data=f"initData={quote(init_data, safe='')}", timeout=30)
+            if scraper and hasattr(scraper, 'post'):
+                r = scraper.post(url, headers=post_headers, 
+                                data=f"initData={quote(init_data, safe='')}", 
+                                timeout=30, impersonate="chrome")
+            else:
+                r = requests.post(url, headers=post_headers, 
+                                 data=f"initData={quote(init_data, safe='')}", 
+                                 timeout=30)
         r.raise_for_status()
         return r.json()
     except requests.exceptions.HTTPError:
