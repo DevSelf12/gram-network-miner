@@ -1,0 +1,8 @@
+{
+  "api_id": 0,
+  "api_hash": "YOUR_API_HASH",
+  "phone": "+62xxxxxxxxxx",
+  "bot_username": "gram_network_bot",
+  "session_hours": 4,
+  "notes": "Get api_id & api_hash from https://my.telegram.org/apps"
+}
