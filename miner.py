@@ -149,9 +149,31 @@ async def main():
     bot_username = cfg.get("bot_username", "gram_network_bot")
 
     session_file = SCRIPT_DIR / "gram_session"
+    password = cfg.get("password", None)
     client = TelegramClient(str(session_file), api_id, api_hash)
-    await client.start(phone=phone)
-    log.info("✅ Telegram client connected!")
+
+    # Login with proper 2FA handling
+    if not await client.is_user_authorized():
+        log.info(f"📱 Sending code to {phone}...")
+        await client.send_code_request(phone)
+        code = input("🔢 Enter the code you received: ")
+        try:
+            await client.sign_in(phone, code)
+        except Exception as e:
+            if "password" in str(e).lower() or "TwoStepVerificationError" in type(e).__name__:
+                if password:
+                    log.info("🔑 Using 2FA password from config...")
+                    await client.sign_in(password=password)
+                else:
+                    log.info("🔑 2FA required. Enter your Telegram cloud password:")
+                    pw = input("Password: ")
+                    await client.sign_in(password=pw)
+                    log.info("💡 Tip: add \"password\" to config.json so you don't need to type it again.")
+            else:
+                raise
+
+    me = await client.get_me()
+    log.info(f"✅ Logged in as {me.first_name} (@{me.username})")
 
     # ── Main loop ───────────────────────────────────────────────────
     while True:
