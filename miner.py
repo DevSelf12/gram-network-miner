@@ -152,15 +152,33 @@ async def get_fresh_initdata(client, bot_username="gram_network_bot"):
 
 
 def api_call(method, endpoint, init_data):
-    """Make API call to Gram Network."""
+    """Make API call to Gram Network (direct or via Cloudflare Worker)."""
+    global cfg
+    worker_url = cfg.get("worker_url", "").rstrip("/")
+    
+    if worker_url:
+        # Route through Cloudflare Worker
+        url = f"{worker_url}/{endpoint}"
+        try:
+            r = requests.get(url, params={"initData": init_data}, 
+                            headers={"User-Agent": "GramMiner/1.0", "Accept": "application/json"}, 
+                            timeout=30)
+            r.raise_for_status()
+            return r.json()
+        except requests.exceptions.HTTPError:
+            log.error(f"{method} {endpoint} → HTTP {r.status_code}: {r.text[:200]}")
+            return None
+        except Exception as e:
+            log.error(f"{method} {endpoint} → {e}")
+            return None
+    
+    # Direct API call (original)
     url = f"{BASE_URL}/{endpoint}"
     try:
         if method == "GET":
             if scraper and hasattr(scraper, 'get'):
-                # curl_cffi with browser impersonation
                 r = scraper.get(url, params={"initData": init_data}, 
-                               headers=HEADERS, timeout=30,
-                               impersonate="chrome")
+                               headers=HEADERS, timeout=30, impersonate="chrome")
             else:
                 r = requests.get(url, params={"initData": init_data}, 
                                 headers=HEADERS, timeout=30)
@@ -209,7 +227,10 @@ def print_status(user):
 
 
 async def main():
+    global cfg
     cfg = load_config()
+    if cfg.get("worker_url"):
+        log.info(f"☁️  Using Cloudflare Worker: {cfg['worker_url']}")
 
     # ── Init Telethon ───────────────────────────────────────────────
     api_id = cfg["api_id"]
