@@ -64,11 +64,12 @@ def load_config():
 async def get_fresh_initdata(client, bot_username="gram_network_bot"):
     """
     Get fresh initData by requesting WebApp view from Telegram.
+    Uses RequestAppWebViewRequest (proper Mini App method).
     """
     try:
-        from telethon.tl.functions.messages import RequestWebViewRequest
+        from telethon.tl.functions.messages import RequestAppWebViewRequest, RequestWebViewRequest
         from telethon.tl.functions.contacts import ResolveUsernameRequest
-        from telethon.tl.types import InputUser
+        from telethon.tl.types import InputBotAppShortName, InputUser
 
         # Resolve bot username to get proper InputUser
         result = await client(ResolveUsernameRequest(bot_username))
@@ -79,21 +80,47 @@ async def get_fresh_initdata(client, bot_username="gram_network_bot"):
 
         bot_user = users[0]
         bot_input = await client.get_input_entity(bot_user.id)
-
-        # Get peer as InputPeer for the chat
         peer = await client.get_input_entity(bot_user.id)
 
         log.info(f"Resolved @{bot_username} → user_id={bot_user.id}")
 
-        r = await client(RequestWebViewRequest(
-            peer=peer,
-            bot=bot_input,
-            platform="android",
-            from_bot_menu=False,
-            url="https://app.gramnetwork.online/",
-        ))
+        # Try RequestAppWebViewRequest with different short names
+        url = None
+        short_names = ["app", "game", "miniapp", "start", "webapp", ""]
+        
+        for short_name in short_names:
+            try:
+                app = InputBotAppShortName(
+                    bot_id=InputUser(
+                        user_id=bot_user.id,
+                        access_hash=bot_user.access_hash
+                    ),
+                    short_name=short_name
+                )
+                r = await client(RequestAppWebViewRequest(
+                    peer=peer,
+                    app=app,
+                    platform="android",
+                    url="https://app.gramnetwork.online/",
+                ))
+                url = r.url
+                log.info(f"✅ RequestAppWebViewRequest success (short_name='{short_name}')")
+                break
+            except Exception as e:
+                log.debug(f"short_name='{short_name}' failed: {e}")
+                continue
 
-        url = r.url
+        # Fallback to RequestWebViewRequest
+        if not url:
+            log.info("Falling back to RequestWebViewRequest...")
+            r = await client(RequestWebViewRequest(
+                peer=peer,
+                bot=bot_input,
+                platform="android",
+                from_bot_menu=False,
+                url="https://app.gramnetwork.online/",
+            ))
+            url = r.url
         log.info(f"WebView URL (full): {url}")
 
         if "tgWebAppData=" in url:
