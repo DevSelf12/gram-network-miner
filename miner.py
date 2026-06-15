@@ -21,7 +21,7 @@ import asyncio
 from datetime import datetime
 from pathlib import Path
 from telethon import TelegramClient, functions, types
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 # ── Paths ───────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
@@ -99,9 +99,9 @@ async def get_fresh_initdata(client, bot_username="gramnetwork_bot"):
             raw = url.split("tgWebAppData=")[1]
             if "&tgWebAppVersion=" in raw:
                 raw = raw.split("&tgWebAppVersion=")[0]
-            init_data = raw  # keep URL-encoded
+            init_data = unquote(raw)
             log.info("✅ Got fresh initData from Telegram!")
-        log.info(f"initData preview: {init_data[:200]}...")
+            log.info(f"initData preview: {init_data[:200]}...")
             return init_data
         else:
             log.error(f"Could not extract initData from URL: {url[:100]}")
@@ -117,9 +117,9 @@ def api_call(method, endpoint, init_data):
     url = f"{BASE_URL}/{endpoint}"
     try:
         if method == "GET":
-            r = requests.get(f"{url}?initData={init_data}", headers=HEADERS, timeout=30)
+            r = requests.get(f"{url}?initData={quote(init_data, safe='')}", headers=HEADERS, timeout=30)
         else:
-            r = requests.post(url, headers=HEADERS, data=f"initData={init_data}", timeout=30)
+            r = requests.post(url, headers=HEADERS, data=f"initData={quote(init_data, safe='')}", timeout=30)
         r.raise_for_status()
         return r.json()
     except requests.exceptions.HTTPError:
