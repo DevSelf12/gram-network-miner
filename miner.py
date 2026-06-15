@@ -101,6 +101,7 @@ async def get_fresh_initdata(client, bot_username="gramnetwork_bot"):
                 raw = raw.split("&tgWebAppVersion=")[0]
             init_data = raw  # keep URL-encoded
             log.info("✅ Got fresh initData from Telegram!")
+        log.info(f"initData preview: {init_data[:200]}...")
             return init_data
         else:
             log.error(f"Could not extract initData from URL: {url[:100]}")
