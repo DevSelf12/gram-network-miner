@@ -63,32 +63,42 @@ def load_config():
 async def get_fresh_initdata(client, bot_username="gram_network_bot"):
     """
     Get fresh initData by requesting WebApp view from Telegram.
-    This simulates opening the mini app — Telegram signs it server-side.
     """
     try:
-        bot = await client.get_entity(bot_username)
+        from telethon.tl.functions.messages import RequestWebViewRequest
+        from telethon.tl.functions.contacts import ResolveUsernameRequest
+        from telethon.tl.types import InputUser
+        from urllib.parse import unquote
 
-        # Request WebView — this returns a URL with fresh signed initData
-        result = await client(functions.messages.RequestWebViewRequest(
-            peer=bot,
-            bot=bot,
+        # Resolve bot username to get proper InputUser
+        result = await client(ResolveUsernameRequest(bot_username))
+        users = result.users
+        if not users:
+            log.error(f"Could not resolve bot @{bot_username}")
+            return None
+
+        bot_user = users[0]
+        bot_input = await client.get_input_entity(bot_user.id)
+
+        # Get peer as InputPeer for the chat
+        peer = await client.get_input_entity(bot_user.id)
+
+        log.info(f"Resolved @{bot_username} → user_id={bot_user.id}")
+
+        r = await client(RequestWebViewRequest(
+            peer=peer,
+            bot=bot_input,
             platform="android",
             from_bot_menu=False,
             url="https://app.gramnetwork.online/",
         ))
 
-        # The URL contains the fresh initData in the hash fragment
-        # Format: https://app.gramnetwork.online/#tgWebAppData=ENCODED_DATA&...
-        url = result.url
+        url = r.url
 
-        # Extract initData from URL fragment
         if "tgWebAppData=" in url:
             raw = url.split("tgWebAppData=")[1]
-            # Remove trailing &tgWebAppVersion=... etc
             if "&tgWebAppVersion=" in raw:
                 raw = raw.split("&tgWebAppVersion=")[0]
-            # URL-decode
-            from urllib.parse import unquote
             init_data = unquote(raw)
             log.info("✅ Got fresh initData from Telegram!")
             return init_data
@@ -97,7 +107,7 @@ async def get_fresh_initdata(client, bot_username="gram_network_bot"):
             return None
 
     except Exception as e:
-        log.error(f"Failed to get initData: {e}")
+        log.error(f"Failed to get initData: {type(e).__name__}: {e}")
         return None
 
 
