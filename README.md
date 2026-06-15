@@ -52,7 +52,7 @@ pip install telethon requests
   "api_id": 12345678,
   "api_hash": "abcdef1234567890abcdef1234567890",
   "phone": "+628xxxxxxxxxx",
-  "bot_username": "gram_network_bot"
+  "bot_username": "gramnetwork_bot"
 }
 ```
 
@@ -61,7 +61,7 @@ pip install telethon requests
 | `api_id` | my.telegram.org → angka |
 | `api_hash` | my.telegram.org → string |
 | `phone` | Nomor HP yang dipake login Telegram |
-| `bot_username` | Username bot Gram Network (default: `gram_network_bot`) |
+| `bot_username` | Username bot Gram Network (default: `gramnetwork_bot`) |
 
 ### Step 5 — First Run (Login Telegram)
 
