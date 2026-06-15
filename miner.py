@@ -94,7 +94,7 @@ async def get_fresh_initdata(client, bot_username="gramnetwork_bot"):
         ))
 
         url = r.url
-        log.info(f"WebView URL: {url[:300]}...")
+        log.info(f"WebView URL (full): {url}")
 
         if "tgWebAppData=" in url:
             raw = url.split("tgWebAppData=")[1]
