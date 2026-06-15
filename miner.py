@@ -177,7 +177,11 @@ def print_status(user):
     log.info(f"⚡ Rate: {user.get('mining_rate', 0)} GRM/hr | Power: {user.get('mining_power', 0)} GH/s")
     log.info(f"🪙 Earned: {user.get('tokens_earned', 0)} GRM")
     log.info(f"🔋 Energy: {user.get('energy', 'N/A')}")
-    log.info(f"⏰ Time Left: {fmt_time(user.get('time_left', 0))}")
+    time_left = user.get('time_left', 0)
+    if isinstance(time_left, str):
+        log.info(f"⏰  Time Left: {time_left}")
+    else:
+        log.info(f"⏰  Time Left: {fmt_time(time_left)}")
     log.info("=" * 50)
 
 
@@ -246,9 +250,16 @@ async def main():
 
         mining_status = user.get("mining_status", "").lower()
 
-        if mining_status == "active" or user.get("time_left", 0) > 0:
+        # Parse time_left (can be int seconds or string "HH:MM:SS")
+        raw_time_left = user.get("time_left", 0)
+        if isinstance(raw_time_left, str) and ":" in raw_time_left:
+            parts = raw_time_left.split(":")
+            time_left = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        else:
+            time_left = int(raw_time_left) if raw_time_left else 0
+
+        if mining_status == "active" or time_left > 0:
             # Wait for current session to finish
-            time_left = user.get("time_left", 0)
             log.info(f"⛏  Mining active. Waiting {fmt_time(time_left)}...")
 
             await asyncio.sleep(min(time_left + 30, SESSION_SECONDS))
