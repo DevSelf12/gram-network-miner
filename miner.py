@@ -61,7 +61,7 @@ def load_config():
         return json.load(f)
 
 
-async def get_fresh_initdata(client, bot_username="gramnetwork_bot"):
+async def get_fresh_initdata(client, bot_username="gram_network_bot"):
     """
     Get fresh initData by requesting WebApp view from Telegram.
     """
@@ -161,7 +161,7 @@ async def main():
     api_id = cfg["api_id"]
     api_hash = cfg["api_hash"]
     phone = cfg["phone"]
-    bot_username = cfg.get("bot_username", "gramnetwork_bot")
+    bot_username = cfg.get("bot_username", "gram_network_bot")
 
     session_file = SCRIPT_DIR / "gram_session"
     password = cfg.get("password", None)
