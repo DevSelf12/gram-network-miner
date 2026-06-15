@@ -293,6 +293,7 @@ async def main():
             log.info(f"🎁 Daily reward claimed!")
 
         mining_status = user.get("mining_status", "").lower()
+        log.info(f"🔍 Mining status: '{mining_status}'")
 
         # Parse time_left (can be int seconds or string "HH:MM:SS")
         raw_time_left = user.get("time_left", 0)
@@ -302,19 +303,38 @@ async def main():
         else:
             time_left = int(raw_time_left) if raw_time_left else 0
 
-        if mining_status == "active" or time_left > 0:
+        # Priority: claim pending reward first
+        if "ready" in mining_status or "claim" in mining_status:
+            log.info("💰 Found pending reward! Claiming now...")
+            claim = api_call("POST", "claim_mining.php", init_data)
+            if claim and claim.get("success"):
+                log.info(f"✅ Claimed! {claim}")
+            else:
+                log.info(f"⚠️  Claim result: {claim}")
+
+            # Start new session after claim
+            log.info("⛏  Starting new mining session...")
+            result = api_call("POST", "start_mining.php", init_data)
+            if result and result.get("success"):
+                log.info(f"✅ Mining started! Session: 4h")
+            else:
+                log.info(f"⚠️  Start result: {result}")
+
+            log.info(f"💤 Sleeping 4 hours...")
+            await asyncio.sleep(SESSION_SECONDS)
+
+        elif mining_status == "active" or (time_left > 0 and "ready" not in mining_status):
             # Wait for current session to finish
             log.info(f"⛏  Mining active. Waiting {fmt_time(time_left)}...")
-
             await asyncio.sleep(min(time_left + 30, SESSION_SECONDS))
 
             # Claim
             log.info("💰 Claiming tokens...")
             claim = api_call("POST", "claim_mining.php", init_data)
             if claim and claim.get("success"):
-                log.info(f"✅ Claimed!")
+                log.info(f"✅ Claimed! {claim}")
             else:
-                log.info(f"⚠️  Claim: {claim}")
+                log.info(f"⚠️  Claim result: {claim}")
         else:
             # Start new session
             log.info("⛏  Starting mining...")
@@ -333,7 +353,7 @@ async def main():
             if init_data:
                 claim = api_call("POST", "claim_mining.php", init_data)
                 if claim and claim.get("success"):
-                    log.info(f"✅ Claimed after session!")
+                    log.info(f"✅ Claimed after session! {claim}")
 
 
 if __name__ == "__main__":
