@@ -157,10 +157,10 @@ def api_call(method, endpoint, init_data):
     worker_url = cfg.get("worker_url", "").rstrip("/")
     
     if worker_url:
-        # Route through Cloudflare Worker
-        url = f"{worker_url}/{endpoint}"
+        # Route through Cloudflare Worker (endpoint as query param)
+        ep = endpoint.replace(".php", "")
         try:
-            r = requests.get(url, params={"initData": init_data}, 
+            r = requests.get(worker_url, params={"endpoint": ep, "initData": init_data}, 
                             headers={"User-Agent": "GramMiner/1.0", "Accept": "application/json"}, 
                             timeout=30)
             r.raise_for_status()

@@ -4,6 +4,6 @@
   "phone": "+62xxxxxxxxxx",
   "password": "",
   "bot_username": "gramnetwork_bot",
-  "worker_url": "",
+  "worker_url": "https://gram.kriptobisnis.workers.dev",
   "notes": "worker_url = Cloudflare Worker URL (e.g. https://gram-proxy.your-name.workers.dev). Kosongkan jika tidak pakai worker."
 }
