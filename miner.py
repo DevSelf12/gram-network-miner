@@ -153,6 +153,7 @@ async def main():
     client = TelegramClient(str(session_file), api_id, api_hash)
 
     # Login with proper 2FA handling
+    await client.connect()
     if not await client.is_user_authorized():
         log.info(f"📱 Sending code to {phone}...")
         await client.send_code_request(phone)
